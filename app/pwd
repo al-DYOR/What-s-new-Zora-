@@ -1,0 +1,7 @@
+rm -rf app src pages public node_modules package-lock.json .next
+npm init -y
+npm install next@15 react@18 react-dom@18
+npm install -D typescript @types/react @types/node tailwindcss postcss autoprefixer eslint-config-next
+npx create-next-app@latest . --js --tailwind --eslint --app --no-src-dir --no-import-alias --use-npm --yes
+npm install viem wagmi @tanstack/react-query axios swr
+
