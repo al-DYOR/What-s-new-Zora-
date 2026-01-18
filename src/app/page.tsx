@@ -1,65 +1,143 @@
-import Image from "next/image";
+// Комментарий: Главная страница приложения
+// Используем 'use client' потому что нужна интерактивность (useState, onClick)
+// Интерфейс на английском, комментарии на русском
+
+'use client';
+
+import { useState } from 'react';
 
 export default function Home() {
+  const [loading, setLoading] = useState(false);
+  const [nft, setNft] = useState<any | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchRandomNft = async () => {
+    setLoading(true);
+    setError(null);
+    setNft(null);
+
+    try {
+      // Комментарий: GraphQL-запрос к Zora API для свежих минтов/токенов на Base
+      // Берем последние 20, сортируем по minted времени DESC
+      const query = `
+        query RecentTokensOnBase {
+          tokens(
+            networks: [{network: ETHEREUM, chain: BASE_MAINNET}]
+            pagination: {limit: 20}
+            sort: {sortKey: MINTED, sortDirection: DESC}
+          ) {
+            nodes {
+              token {
+                collectionAddress
+                tokenId
+                name
+                image {
+                  url
+                }
+              }
+            }
+          }
+        }
+      `;
+
+      const response = await fetch('https://api.zora.co/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+
+      const json = await response.json();
+
+      if (json.errors) {
+        throw new Error(json.errors[0]?.message || 'GraphQL error');
+      }
+
+      const tokens = json.data?.tokens?.nodes || [];
+
+      if (tokens.length === 0) {
+        throw new Error('No recent tokens found on Base');
+      }
+
+      // Комментарий: Выбираем рандомный из полученных
+      const randomIndex = Math.floor(Math.random() * tokens.length);
+      const selectedToken = tokens[randomIndex].token;
+
+      setNft({
+        name: selectedToken.name || 'Mystery NFT',
+        imageUrl: selectedToken.image?.url || '',
+        collectionAddress: selectedToken.collectionAddress,
+        tokenId: selectedToken.tokenId,
+      });
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to load NFT. Try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Комментарий: Ссылка на минт — стандартная для Zora на Base
+  const mintLink = nft
+    ? `https://zora.co/collect/base:${nft.collectionAddress}/${nft.tokenId}`
+    : '';
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-b from-gray-50 to-white">
+      <h1 className="text-5xl font-bold mb-6 text-center">Who am I today?</h1>
+      <p className="text-xl mb-10 text-center max-w-2xl">
+        Discover a random fresh NFT minted on Zora (Base chain)
+      </p>
+
+      <button
+        onClick={fetchRandomNft}
+        disabled={loading}
+        className={`px-10 py-5 text-xl font-semibold rounded-full transition-all ${
+          loading
+            ? 'bg-gray-400 cursor-not-allowed'
+            : 'bg-black text-white hover:bg-gray-800 shadow-lg'
+        }`}
+      >
+        {loading ? 'Discovering...' : 'Who am I today'}
+      </button>
+
+      {error && (
+        <p className="mt-8 text-red-600 font-medium">{error}</p>
+      )}
+
+      {nft && (
+        <div className="mt-12 w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
+          {nft.imageUrl ? (
+            <img
+              src={nft.imageUrl}
+              alt={nft.name}
+              className="w-full h-auto object-cover"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          ) : (
+            <div className="h-64 bg-gray-200 flex items-center justify-center">
+              <p className="text-gray-500">No image available</p>
+            </div>
+          )}
+
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-4">{nft.name}</h2>
+
+            <a
+              href={mintLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full py-4 bg-black text-white text-center font-semibold rounded-lg hover:bg-gray-800 transition"
+            >
+              Mint on Zora (~0.00001 ETH gas fee)
+            </a>
+          </div>
         </div>
-      </main>
-    </div>
+      )}
+    </main>
   );
 }
