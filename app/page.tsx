@@ -38,16 +38,16 @@ export default function Home() {
                   : 'text-gray-300 hover:text-white'
               }`}
             >
-              {p === '30d' ? 'Месяц' : p === '7d' ? '7 дней' : '24ч'}
+              {p === '30d' ? '30D' : p === '7d' ? '7D' : '24H'}
             </button>
           ))}
         </div>
 
         <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20">
           {isLoading ? (
-            <div className="text-center py-20">Загрузка топа...</div>
+            <div className="text-center py-20 text-white">Loading rankings...</div>
           ) : error ? (
-            <div className="text-center py-20 text-red-300">Ошибка загрузки данных</div>
+            <div className="text-center py-20 text-red-300">Failed to load data</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -55,7 +55,7 @@ export default function Home() {
                   <tr className="border-b border-white/20">
                     <th className="p-4 font-bold text-white">#</th>
                     <th className="p-4 font-bold text-white">Coin</th>
-                    <th className="p-4 font-bold text-white">Volume {period}</th>
+                    <th className="p-4 font-bold text-white">Volume {period.toUpperCase()}</th>
                     <th className="p-4 font-bold text-white">Total Vol</th>
                   </tr>
                 </thead>
@@ -90,11 +90,9 @@ export default function Home() {
 
         <div className="text-center mt-12">
           <button className="px-12 py-6 bg-gradient-to-r from-pink-500 to-purple-600 rounded-3xl text-2xl font-bold text-white shadow-2xl hover:scale-105 transition-all duration-300">
-            Кто я сегодня ➜
+            Who am I today ➜
           </button>
         </div>
       </div>
     </main>
-  );
-}
-
+  
