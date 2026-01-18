@@ -1,6 +1,5 @@
 // Комментарий: Главная страница приложения
-// Используем 'use client' потому что нужна интерактивность (useState, onClick)
-// Интерфейс на английском, комментарии на русском
+// 'use client' нужен для useState и onClick
 
 'use client';
 
@@ -17,72 +16,36 @@ export default function Home() {
     setNft(null);
 
     try {
-      // Комментарий: GraphQL-запрос к Zora API для свежих минтов/токенов на Base
-      // Берем последние 20, сортируем по minted времени DESC
-      const query = `
-        query RecentTokensOnBase {
-          tokens(
-            networks: [{network: ETHEREUM, chain: BASE_MAINNET}]
-            pagination: {limit: 20}
-            sort: {sortKey: MINTED, sortDirection: DESC}
-          ) {
-            nodes {
-              token {
-                collectionAddress
-                tokenId
-                name
-                image {
-                  url
-                }
-              }
-            }
-          }
-        }
-      `;
-
-      const response = await fetch('https://api.zora.co/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query }),
-      });
+      // Комментарий: Теперь запрашиваем свой серверный API-роут, а не Zora напрямую
+      // Это решает проблему CORS и 503 preflight
+      const response = await fetch('/api/random-nft');
 
       if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
+        const errData = await response.json();
+        throw new Error(errData.error || `Ошибка сервера: ${response.status}`);
       }
 
-      const json = await response.json();
+      const data = await response.json();
 
-      if (json.errors) {
-        throw new Error(json.errors[0]?.message || 'GraphQL error');
+      if (data.error) {
+        throw new Error(data.error);
       }
-
-      const tokens = json.data?.tokens?.nodes || [];
-
-      if (tokens.length === 0) {
-        throw new Error('No recent tokens found on Base');
-      }
-
-      // Комментарий: Выбираем рандомный из полученных
-      const randomIndex = Math.floor(Math.random() * tokens.length);
-      const selectedToken = tokens[randomIndex].token;
 
       setNft({
-        name: selectedToken.name || 'Mystery NFT',
-        imageUrl: selectedToken.image?.url || '',
-        collectionAddress: selectedToken.collectionAddress,
-        tokenId: selectedToken.tokenId,
+        name: data.name,
+        imageUrl: data.imageUrl,
+        collectionAddress: data.collectionAddress,
+        tokenId: data.tokenId,
       });
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to load NFT. Try again later.');
+      setError(err.message || 'Не удалось загрузить NFT. Попробуй ещё раз.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Комментарий: Ссылка на минт — стандартная для Zora на Base
+  // Комментарий: Ссылка на минт на Zora
   const mintLink = nft
     ? `https://zora.co/collect/base:${nft.collectionAddress}/${nft.tokenId}`
     : '';
@@ -106,9 +69,7 @@ export default function Home() {
         {loading ? 'Discovering...' : 'Who am I today'}
       </button>
 
-      {error && (
-        <p className="mt-8 text-red-600 font-medium">{error}</p>
-      )}
+      {error && <p className="mt-8 text-red-600 font-medium">{error}</p>}
 
       {nft && (
         <div className="mt-12 w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -120,7 +81,7 @@ export default function Home() {
             />
           ) : (
             <div className="h-64 bg-gray-200 flex items-center justify-center">
-              <p className="text-gray-500">No image available</p>
+              <p className="text-gray-500">Изображение отсутствует</p>
             </div>
           )}
 
